@@ -1,85 +1,63 @@
-# CompArch Lab 3: Single Cycle CPU
+# CompArch Lab 4: Vector Operations on a Single Cycle CPU
 
-The goal of this lab is to design, create, and test a 32-bit single cycle CPU.
+The goal of this lab is to support some Single Instruction Multiple Data operations in hardware. We will be very loosely following the [MIPS SIMD whitepaper](https://s3-eu-west-1.amazonaws.com/downloads-mips/documents/MD00926-2B-MSA-WHT-01.03.pdf). 
 
-You will work in groups of 2-3. You may shuffle teams if you so choose.
+## SIMD Architecture ##
 
-We strongly suggest you include a mid-point check in with course staff in your plan. One good thing to do at this check-in or earlier would be to review your block diagram.
+SIMD adds a new type of instruction, a vector instruction, which operates on a special set of registers. These registers are 128 bits wide, and there are 32 of them. There exists a possibility of using Virtual Processing Elements (VPEs) in which fewer than 32 registers can be implemented, but for the sake of simplicity we will ignore these, and simply build all 32. There is another option to have the 128 bits share 64 bits of an Floating Point Unit, which we will also not implement for simplicity. Vector operations operate on the vector registers, but with the additional constraint of a data-type indication which indicates how the 128 bits should be partitioned. There are 5 types of partitions. 
 
+| Data Format        | Abbreviation  |
+| :----------------: |:-------------:|
+| Byte, 8-bit        | b             |
+| Halfword, 16-bit   | h             |
+| Word, 32-bit       | w             |
+| Doubleword, 64-bit | d             |
+| Vector, 32-bit     | v             |
 
-## Processor ##
+Vector operations are coded to operate on the 128 bit register with these distinctions in mind. For example, ADDVI can be coded as ADDVI.B, ADDVI.H, ADDVI.W, ADDVI.D, or ADDVI.V to add an immediate to the various sizes of argument. Vecotr operations can operate between vector registers as well. `addv.w   $w5,$w1,$w2` for instance, adds each word in `$w1` to each word in `$w2` and places the result in `$w5`. ADDVI.df represents the ADDVI operation for all supported data formats. For simplicity, we will be implementing operations that act on Words only (since we don't currently support various data types). Operations exist to load general purpose registers (GPR) to the vector registers in various ways. `fill.w   $w6,$2` loads the 32 bit GPR `$2` into each word in `w6`. All vector registers are temporary, in that they need to be callee-saved by convention. 
 
-Create a 32-bit MIPS-subset CPU that supports (at least) the following instructions:
+The vector instructions will be coded by the 4 MSB's as equal to `0111` which is unused in MIPS. The vector op-code will be given by the next 8 bits `[27:20]`. We will be deviating from the MIPS SIMD for our specific implementation, choosing a set of useful vector operations to implement:
 
-	LW, SW, J, JR, JAL, BEQ, BNE, XORI, ADDI, ADD, SUB, SLT
-    
-Every module of Verilog you write must be **commented and tested**.  Running assembly programs only tests the system at a high level – each module needs to be unit tested on its own with a Verilog test bench. Include a master script that runs your entire test suite.
-
-
-## Programs ##
-
-You will write, assemble and run a set of programs on your CPU that act as a high-level test-bench.  These programs need to exercise all of the portions of your design and give a clear pass/fail response.
-
-We will work on one test program (Fibonacci) in class. In addition, you must write (at least) one test assembly program of your own. We will collect these test programs and redistribute them to all teams, so that you have a richer variety of assembly tests for your processor.
-
-### Submitting your test program ###
-
-Submit your assembly test(s) by GitHub pull request.
-
-In addition to your actual test assembly code, write a short README with:
- - Expected results of the test
- - Any memory layout requirements (e.g. `.data` section)
- - Any instructions used outside the basic required subset (ok to use, but try to submit at least one test program everyone can run)
-
-Submit the test program and README by submitting a pull request to the main course repository. Code should be in `/asmtest/<your-team-name>/` (you may use subfolders if you submit multiple tests).
-We can only accept pull requests that contain just your assembly test folder (i.e. they should not include your processor Verilog).
-
-After submitting your test program, you may use any of the programs written by your peers to test your processor.
-
-
-
-## Deliverables ##
-
-Push to GitHub and submit a link on Canvas. You should include:
- - Verilog and test benches for your processor design
- - Assembly test(s) with README 
- - Scripts used for testing, commented or with separate README explaining how to run everything and what to expect as output.
- - Report (PDF or MarkDown), including:
-   - Written description and block diagram of your processor architecture. You may include selected RTL to capture how instructions are implemented.
-   - Description of your test plan and results
-   - Some performance/area analysis of your design. This can be for the full processor, or a case study of choices made designing a single unit. It can be based on calculation, simulation, Vivado synthesis results, or a mix of all three.
- 
-
-## Notes/Hints ##
-
-### Design Reuse ###
-You may freely reuse code created for previous labs, even code written by another team or the instructors. Reusing code does not change your obligation to understand it and provide appropriate test benches. Don't forget to remove timing delays from earlier code.
-
-**Each example of reuse should be documented.** 
-
-### Organization ###
-This is a big project, and you'll benefit from (1) a well-organized repository, and (2) good scripting, expecially for testing. We'll provide an example project in class showing how to automate build and testing tasks.
-
-### Synthesis ###
-You are **not** required to implement your design on FPGA. You may want to synthesize your design (or parts of it) with Vivado to collect performance/area data.
-
-### Assembling ###
-[MARS](http://courses.missouristate.edu/kenvollmar/mars/) is a very nice assembler. It allows you to see the machine code (actual bits) of the instructions, which is useful for debugging. 
+LDV.W: Load Vector from four adjacent GPRs as words.
+    Format: `$d = {$s, $s+1, $s+2, $s+3}`
+    `0111 00000010 ddddd sssss 0000000000`
+    `$d` is the destination Vector register
+    `$s` is the start source register, where `$s`, `$s+1`, `$s+2`, `$s+3` are all loaded.
+STV.W: Store Vector into a group of four GPRs.
+    Format: `$d, $d+1, $d+2, $d+3 = $s`
+    `0111 00000111 ddddd sssss 0000000000`
+    `$d` is the destination start GPR, where `$d`, `$d+1`, `$d+2`, `$d+3` are all stored.
+    `$s` is the source Vector register
+ADDV.W: Add two Vectors togeather, word-wise.
+    Format: `$d = $a + $b`
+    `0111 00001100 ddddd aaaaa bbbbb 00000`
+    `$d` is the destination Vector register
+    `$a` is the first source Vector register
+    `$b` is the second source Vector register
+SUBV.W: Subtract two vectors, word-wise.
+    Format: `$d = $a - $b`
+    `0111 00010001 ddddd aaaaa bbbbb 00000`
+    `$d` is the destination Vector register
+    `$a` is the first source Vector register
+    `$b` is the second source Vector register
+ADDIV: Add an immediate to a vector.
+    Format: `$d = $s + imm`
+    `0111 00010110 ddddd sssss iiiiiiii`
+    `$d` is the destination Vector register
+    `$s` is the source Vector register
+    `i` is the immediate value
+XORV: Bitwise XOR on two vectors.
+    Format: `$d = $a | $b`
+    `0111 00011011 ddddd aaaaa bbbbb 00000`
+    `$d` is the destination Vector register
+    `$a` is the first source Vector register
+    `$b` is the second source Vector register
+ANDV: Bitwise AND on two vectors.
+    Format: `$d = $a & $b`
+    `0111 00100000 ddddd aaaaa bbbbb 00000`
+    `$d` is the destination Vector register
+    `$a` is the first source Vector register
+    `$b` is the second source Vector register
 
 
-### Psuedo-Instructions ###
-There are many instructions supported by MARS that aren’t "real" MIPS instructions, but instead map onto other instructions. Your processor should only implement instructions from the actual MIPS ISA (see the [Instruction Reference sheet](https://canvas.instructure.com/courses/1698665/files/82853161/download?wrap=1) for a complete listing).
-
-### Initializing Memory ###
-We've provided a Verilog memory file for your CPU to use. In simulation, you can initialize a memory from a file with `$readmemb` (binary) or `$readmemh` (hex).  This will make your life very much easier!
-
-For example, you could load a program into your data memory by putting your machine code in hexadecimal format in a file named `file.dat` and placing `$readmemh(“file.dat”, mem);` in an `initial` block to load that data into the `mem` register array.  
-
-This memory initialization only works in simulation; it will be ignored by Vivado (which is ok).
-
-### Memory Configuration ###
-
-In MARS, go to "Settings -> Memory Configuration".  Changing this to "Compact, Text at Address 0" will give you a decent memory layout to start with.  This will put your program (text) at address `0`, your data at address `0x1000`, and your stack pointer will start at `0x3ffc`.
-
-You will need to manually set your stack pointer in your Verilog simulation by including an assembly instruction to set the `$sp` register early in your program.  This is done automatically for you in MARS. 
 
