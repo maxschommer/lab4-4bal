@@ -1,0 +1,1 @@
+iverilog -o cpu_t -I Register cpu.t.v && ./cpu_t && rm cpu_t
