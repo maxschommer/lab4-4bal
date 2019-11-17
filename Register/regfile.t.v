@@ -6,10 +6,11 @@
 `include "regfile.v"
 
 module hw4testbenchharness();
+  localparam WIDTH = 34;
 
-  wire[31:0]	ReadData1;	// Data from first register read
-  wire[31:0]	ReadData2;	// Data from second register read
-  wire[31:0]	WriteData;	// Data to write to register
+  wire[WIDTH-1:0]	ReadData1;	// Data from first register read
+  wire[WIDTH-1:0]	ReadData2;	// Data from second register read
+  wire[WIDTH-1:0]	WriteData;	// Data to write to register
   wire[4:0]	ReadRegister1;	// Address of first register to read
   wire[4:0]	ReadRegister2;	// Address of second register to read
   wire[4:0]	WriteRegister;  // Address of register to write
@@ -21,7 +22,7 @@ module hw4testbenchharness();
   wire		dutpassed;	// Indicates whether register file passed tests
 
   // Instantiate the register file being tested.  DUT = Device Under Test
-  regfile DUT
+  regfile #(.WIDTH(WIDTH)) DUT 
   (
     .ReadData1(ReadData1),
     .ReadData2(ReadData2),
@@ -34,7 +35,7 @@ module hw4testbenchharness();
   );
 
   // Instantiate test bench to test the DUT
-  hw4testbench tester
+  hw4testbench #(.WIDTH(WIDTH)) tester
   (
     .begintest(begintest),
     .endtest(endtest), 
@@ -71,7 +72,7 @@ endmodule
 //   raise 'endtest'.
 //------------------------------------------------------------------------------
 
-module hw4testbench
+module hw4testbench #(parameter WIDTH=32)
 (
 // Test bench driver signal connections
 input	   		begintest,	// Triggers start of testing
@@ -79,9 +80,9 @@ output reg 		endtest,	// Raise once test completes
 output reg 		dutpassed,	// Signal test result
 
 // Register File DUT connections
-input[31:0]		ReadData1,
-input[31:0]		ReadData2,
-output reg[31:0]	WriteData,
+input[WIDTH-1:0]		ReadData1,
+input[WIDTH-1:0]		ReadData2,
+output reg[WIDTH-1:0]	WriteData,
 output reg[4:0]		ReadRegister1,
 output reg[4:0]		ReadRegister2,
 output reg[4:0]		WriteRegister,
@@ -91,7 +92,7 @@ output reg		Clk
 
   // Initialize register driver signals
   initial begin
-    WriteData=32'd0;
+    WriteData = 128'd0;
     ReadRegister1=5'd0;
     ReadRegister2=5'd0;
     WriteRegister=5'd0;
@@ -109,7 +110,7 @@ output reg		Clk
   //   Write '42' to register 2, verify with Read Ports 1 and 2
   //   (Passes because example register file is hardwired to return 42)
   WriteRegister = 5'd2;
-  WriteData = 32'd42;
+  WriteData = 128'd42;
   RegWrite = 1;
   ReadRegister1 = 5'd2;
   ReadRegister2 = 5'd2;
@@ -127,7 +128,7 @@ output reg		Clk
   //   Write '15' to register 2, verify with Read Ports 1 and 2
   //   (Fails with example register file, but should pass with yours)
   WriteRegister = 5'd2;
-  WriteData = 32'd15;
+  WriteData = 128'd15;
   RegWrite = 1;
   ReadRegister1 = 5'd2;
   ReadRegister2 = 5'd2;
@@ -142,7 +143,7 @@ output reg		Clk
   //   Write '44' to register 12, with WriteEnable false. Should not equal
   //   '44'. 
   WriteRegister = 5'd12;
-  WriteData = 32'd44;
+  WriteData = 128'd44;
   RegWrite = 0;
   ReadRegister1 = 5'd12;
   ReadRegister2 = 5'd12;
@@ -157,7 +158,7 @@ output reg		Clk
   //   Write '65' to register 4, verify with Read Ports 1 and 2
   //   that only register 4 is written to (Decoder works) and that 5 and 6 aren't.
   WriteRegister = 5'd4;
-  WriteData = 32'd65;
+  WriteData = 128'd65;
   RegWrite = 1;
   ReadRegister1 = 5'd5;
   ReadRegister2 = 5'd6;
@@ -173,7 +174,7 @@ output reg		Clk
   //   that they are equal. Then, check that when you write to register 30 that
   //   they are also equivalent (Port 1 and 2 both work)
   WriteRegister = 5'd12;
-  WriteData = 32'd122;
+  WriteData = 128'd122;
   RegWrite = 1;
   ReadRegister1 = 5'd12;
   ReadRegister2 = 5'd12;
@@ -185,7 +186,7 @@ output reg		Clk
   end
 
   WriteRegister = 5'd30;
-  WriteData = 32'd122;
+  WriteData = 128'd122;
   RegWrite = 1;
   ReadRegister1 = 5'd30;
   ReadRegister2 = 5'd30;
@@ -201,7 +202,7 @@ output reg		Clk
   //   Write '122' to register 0, verify with Read Ports 1 and 2 and check
   //   that they are 0.
   WriteRegister = 5'd0;
-  WriteData = 32'd122;
+  WriteData = 128'd122;
   RegWrite = 1;
   ReadRegister1 = 5'd0;
   ReadRegister2 = 5'd0;

@@ -1,7 +1,7 @@
-`include "register32.v"
+`include "registerN.v"
 
 // Test a 4 bit version of the register (it's extensible with parameters)
-module testRegister32();
+module testRegisterN();
 	localparam WIDTH = 4;
 	// localparam PULSED = 0;
 	reg clkpulsed; 	// Variable for signaling if the clock has 
@@ -12,7 +12,7 @@ module testRegister32();
 	reg [WIDTH-1:0] inputs;
 	wire [WIDTH-1:0] outputs;
 
-	register32 #(.WIDTH(WIDTH)) reg32_test (.q(outputs), .d(inputs), .wrenable(enable), .clk(clk));
+	registerN #(.WIDTH(WIDTH)) regN_test (.q(outputs), .d(inputs), .wrenable(enable), .clk(clk));
 
 	initial begin
 		inputs[WIDTH-1:0] = 0;

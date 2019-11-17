@@ -19,44 +19,46 @@ baseStr = """
 //   1 synchronous, positive edge triggered write port
 //------------------------------------------------------------------------------
 `include "decoder1to32.v"
-`include "register32.v"
-`include "register32zero.v"
-`include "mux32to1by32.v"
+`include "registerN.v"
+`include "registerNzero.v"
+`include "muxNto1by32.v"
 
 module regfile
+#(parameter WIDTH=32)
 (
-output[31:0]	ReadData1,	// Contents of first register read
-output[31:0]	ReadData2,	// Contents of second register read
-input[31:0]	WriteData,	// Contents to write to register
-input[4:0]	ReadRegister1,	// Address of first register to read
-input[4:0]	ReadRegister2,	// Address of second register to read
-input[4:0]	WriteRegister,	// Address of register to write
-input		RegWrite,	// Enable writing of register when High
-input		Clk		// Clock (Positive Edge Triggered)
+output[WIDTH-1:0]   ReadData1,  // Contents of first register read
+output[WIDTH-1:0]   ReadData2,  // Contents of second register read
+input[WIDTH-1:0]    WriteData,  // Contents to write to register
+input[4:0]  ReadRegister1,  // Address of first register to read
+input[4:0]  ReadRegister2,  // Address of second register to read
+input[4:0]  WriteRegister,  // Address of register to write
+input       RegWrite,   // Enable writing of register when High
+input       Clk,        // Clock (Positive Edge Triggered)
+    input[31:0] link_addr
 );
-	localparam WIDTH = 32;
 
-	
-	
-	wire [WIDTH-1:0] decoded;
-	decoder1to32 dec(.out(decoded), .enable (RegWrite), .address(WriteRegister));
+    
+    wire [31:0] decoded;
+    decoder1to32 dec(.out(decoded), .enable (RegWrite), .address(WriteRegister));
 
     genvar i;
     generate
         for (i=0; i<WIDTH; i=i+1)
         begin:genblock
-        	wire [WIDTH-1:0] regOut;
-        	if (i == 0) 
-    	    	register32zero regs(.q(regOut), .d(WriteData), .wrenable(decoded[i]), .clk(Clk));
-        	else
-    	    	register32 regs(.q(regOut), .d(WriteData), .wrenable(decoded[i]), .clk(Clk));
+            wire [WIDTH-1:0] regOut;
+            if (i == 0) 
+                registerNzero  #(.WIDTH(WIDTH)) regs(.q(regOut), .d(WriteData), .wrenable(decoded[i]), .clk(Clk));
+            else
+                registerN  #(.WIDTH(WIDTH)) regs(.q(regOut), .d(WriteData), .wrenable(decoded[i]), .clk(Clk));
         end
     endgenerate
 
-    mux32to1by32 endMux1(.out(ReadData1), .address(ReadRegister1), {0});
- 	mux32to1by32 endMux2(.out(ReadData2), .address(ReadRegister2), {0});
+    muxNto1by32 #(.WIDTH(WIDTH)) endMux1(.out(ReadData1), .address(ReadRegister1), {0});
+    muxNto1by32 #(.WIDTH(WIDTH)) endMux2(.out(ReadData2), .address(ReadRegister2), {0});
 
+    //always @(link_addr) begin
 
+    //end
 endmodule
 """.format(repeatedInput)
 

@@ -1,6 +1,6 @@
-`include "mux32to1by32.v"
+`include "muxNto1by32.v"
 
-module testMux32to1by32();
+module testMuxNto1by32();
 	localparam WIDTH = 32;
 
 	reg [4:0] address;
@@ -8,7 +8,7 @@ module testMux32to1by32();
 	wire [WIDTH-1:0] out;
 
 
-	mux32to1by32 DUT(.out(out), .address(address), .input5 (inputs));
+	muxNto1by32 #(.WIDTH(WIDTH)) DUT(.out(out), .address(address), .input5 (inputs));
 
 	initial begin
 		inputs[WIDTH-1:0] = 0;
@@ -18,7 +18,7 @@ module testMux32to1by32();
 			// inputs[WIDTH-1:0] = 18;
 			$display("%b  %b   |   %b", address, inputs, out);
 			// inputs[address] = 22;
-			$display("%b  %b   |   %b", address, inputs, out);
+			// $display("%b  %b   |   %b", address, inputs, out);
 
 			address = address + 1;
 		end

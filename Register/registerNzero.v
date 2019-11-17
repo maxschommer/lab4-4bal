@@ -1,4 +1,4 @@
-module register32zero
+module registerNzero
 #(parameter WIDTH=32)
 (
 output reg  [WIDTH-1:0] q,
