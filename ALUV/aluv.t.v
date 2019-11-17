@@ -1,4 +1,4 @@
-`include "alu.v"
+`include "aluv.v"
 
 
 // Uncomment the `define below to enable dumping waveform traces for debugging
@@ -10,22 +10,23 @@
 
 module alu_test ();
 
-	wire [31:0] result;
-	wire carryout;
+	wire [127:0] result;
 	wire iszero;
-	wire overflow;
 
-	reg [31:0] operandA;
-	reg [31:0] operandB;
+	reg [127:0] operandA;
+	reg [127:0] operandB;
 	reg [2:0] command;
+	reg [2:0] dtype;
+
+    reg [127:0] target_result;
 
 
-	alu DUT(.result(result),  
+	aluv DUT(.result(result),  
 			.iszero(iszero), 
-			.overflow(overflow), 
 			.operandA(operandA), 
 			.operandB(operandB), 
-			.command(command));
+			.command(command),
+            .dtype(dtype));
 	
 
 	 initial begin
@@ -35,40 +36,22 @@ module alu_test ();
 	      $dumpvars();
 	    `endif
 
-	    command = `ADD_; operandA = 32'd21; operandB = 32'd21; #1
-	    `ASSERT_EQ(result, 32'd42, "Basic addition: 21 + 21")
-	    `ASSERT_EQ(overflow, 1'b0, "No overflow on basic addition.")
+        dtype = `WORD_;
+        operandA = {32'd17,32'd18};
+        operandB = {32'd3,32'd2};
+        target_result = {32'd17+32'd3, 32'd18+32'd2};
 
-	    command = `ADD_; operandA = 32'd2147483647; operandB = 32'd2147483647; #1
-	    `ASSERT_EQ(overflow, 1'b1, "Overflow on maximum edge case addition.")
+	   	command = `ADD_;
+        #10;
+	    `ASSERT_EQ(result, target_result, "Test ADD with different numbers.")
 
-	    command = `SUB_; operandA = 32'd57392; operandB = 32'd4488; #1
-	    `ASSERT_EQ(result, 32'd52904, "Basic subtraction.")
-
-	    command = `SUB_; operandA = 32'd1111; operandB = 32'd1112; #1
-	    `ASSERT_EQ(result, 32'b11111111111111111111111111111111, "Subtraction, checking twos complement.")
-
-	   	command = `XOR_; operandA = 32'b1111; operandB = 32'b1111; #1
-	    `ASSERT_EQ(result, 32'd0, "Test XOR with same numbers.")
-	   	
-	   	command = `XOR_; operandA = 32'b0011; operandB = 32'b1111; #1
-	    `ASSERT_EQ(result, 32'b1100, "Test XOR with different numbers.")
-
-	   	command = `AND_; operandA = 32'b0011; operandB = 32'b1111; #1
-	    `ASSERT_EQ(result, operandA & operandB, "Test AND with different numbers.")
-	    
-	   	command = `SLT_; operandA = 32'b0011; operandB = 32'b1111; #1
-	    `ASSERT_EQ(result, 32'b1, "Test SLT with different numbers.")
-
-	    // TODO
-	   	command = `NAND_; operandA = 32'b0011; operandB = 32'b1111; #1
-	    `ASSERT_EQ(result, ~(operandA & operandB), "Test NAND with different numbers.")
-	    
-	   	command = `NOR_; operandA = 32'b1101010011; operandB = 32'b100011111; #1
-	    `ASSERT_EQ(result, ~(operandA | operandB), "Test NOR with different numbers.")
-
-	   	command = `OR_; operandA = 32'b10011011; operandB = 32'b1111; #1
-	    `ASSERT_EQ(result, (operandA | operandB), "Test OR with different numbers.")
+        dtype = `BYTE_;
+        operandA = {8'd1,8'd1,8'd1,8'd1,8'd1,8'd1,8'd1,8'd1};
+        operandB = {8'd1,8'd1,8'd1,8'd1,8'd1,8'd1,8'd1,8'd1};
+        target_result = {8'd0,8'd0,8'd0,8'd0,8'd0,8'd0,8'd0,8'd0};
+	   	command = `SUB_;
+        #10;
+	    `ASSERT_EQ(result, target_result, "Test ADD with different numbers.")
 	    
 	 end
 
