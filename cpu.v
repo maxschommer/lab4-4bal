@@ -69,8 +69,8 @@ module cpu (
     reg  [4:0] A_w;                     // Connected
 
 
-    // REG
-    regfile REG
+    // General Purpose REG
+    regfile #(.WIDTH(32)) REG
     (
         .ReadData1(D_a),            // Connected
         .ReadData2(D_b),            // Connected
@@ -80,6 +80,19 @@ module cpu (
         .WriteRegister(A_w),         // Connected
         .RegWrite(RegWrite),          // Connected From FSM
         .Clk(clk)                    // Connected
+    );
+
+    // Vector Register 
+    regfile #(.WIDTH(128)) VREG
+    (
+        .ReadData1    (ReadData1Vec),
+        .ReadData2    (ReadData2Vec),
+        .WriteData    (WriteDataVec),
+        .ReadRegister1(ReadRegister1Vec),
+        .ReadRegister2(ReadRegister2Vec),
+        .WriteRegister(WriteRegisterVec),
+        .RegWrite     (RegWriteVec),
+        .Clk          (clk)
     );
 
     // Program Counter
@@ -135,7 +148,6 @@ module cpu (
             .command(ALUOp));                           // Connected
 
     // Instruction Fetch Unit
-
     decoder dec(OP, rs, rt, rd, shamt, funct, imm, jaddr, instruction); // Assign code to instruction for debugging
 
     // Sign Extend
@@ -143,12 +155,13 @@ module cpu (
     signextend SE(.se (se_out), .imm(imm));
 
 
-
     // FSM
     fsm FSM(.RegDest(RegDest),
             .RegWrite     (RegWrite),
             .ALUSrc       (ALUSrc),
-            .ALUOp        (ALUOp), 
+            .ALUOp        (ALUOp),
+            .ALUVOp       (ALUVOp),
+            .ALUVDtype    (ALUVDtype),
             .MemWrite     (MemWriteFSM),
             .MemRead      (MemRead),
             .MemToReg     (MemToReg),
