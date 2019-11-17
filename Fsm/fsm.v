@@ -1,5 +1,6 @@
-// Assembly commands we must support
 `define RTYPE_OP 6'b000000
+
+`define VTYPE_OP 6'b000111
 
 `define ADDI_OP 6'b001000
 `define XORI_OP 6'b001110
@@ -7,13 +8,16 @@
 `define LW_OP 6'b100011
 `define SW_OP 6'b101011
 
-`define BEQ_OP 6'b000100 // I-type instructions
+// I-type instructions
+`define BEQ_OP 6'b000100    
 `define BNE_OP 6'b000101 
 
-`define J_OP 6'b000010 // J-type instructions
+// J-type instructions
+`define J_OP 6'b000010      
 `define JAL_OP 6'b000011
 
-`define JR_FUNCT   6'h8
+// R-type instructions
+`define JR_FUNCT   6'h8     
 `define ADD_FUNCT  6'h20
 `define SUB_FUNCT  6'h22
 `define XOR_FUNCT  6'h26
@@ -21,6 +25,43 @@
 `define AND_FUNCT  6'h24
 `define NOR_FUNCT  6'h27
 `define OR_FUNCT   6'h25
+
+
+// V-type instructions
+`define LDV_B       6'd0    // Unsupported
+`define LDV_H       6'd1    // Unsupported
+`define LDV_W       6'd2
+`define LDV_D       6'd3    // Unsupported
+`define LDV_V       6'd4    // Unsupported
+
+`define STV_B       6'd5    // Unsupported
+`define STV_H       6'd6    // Unsupported
+`define STV_W       6'd7
+`define STV_D       6'd8    // Unsupported
+`define STV_V       6'd9    // Unsupported
+
+`define ADDV_B      6'd10
+`define ADDV_H      6'd11 
+`define ADDV_W      6'd12
+`define ADDV_D      6'd13
+`define ADDV_V      6'd14
+
+`define SUBV_B      6'd15
+`define SUBV_H      6'd16 
+`define SUBV_W      6'd17
+`define SUBV_D      6'd18
+`define SUBV_V      6'd19
+
+`define ADDIV_B     6'd20
+`define ADDIV_H     6'd21 
+`define ADDIV_W     6'd22
+`define ADDIV_D     6'd23
+`define ADDIV_V     6'd24
+
+`define XORV        6'd25
+
+`define ANDV        6'd26
+
 
 // ALU commands
 `define ADD_  3'd0
@@ -31,8 +72,14 @@
 `define NOR_  3'd6
 `define OR_   3'd7
 
-// Control signal definitions
+// Vector ALU Data Size
+`define BYTE_       3'd0
+`define HALFWORD_   3'd1
+`define WORD_       3'd2
+`define DOUBLEWORD_ 3'd3
+`define VECTOR_     3'd4
 
+// Control signal definitions
 `define REG_DEST_RT 2'b0
 `define REG_DEST_RD 2'b1
 `define REG_DEST_LINK 2'b10
@@ -92,7 +139,7 @@ module fsm
     (
         output reg  RegWrite, ALUSrc, 
         output reg [1:0] RegDest, MemToReg,
-        output reg [2:0] ALUOp, 
+        output reg [2:0] ALUOp, ALUVOp, ALUVDtype,
         output reg MemWrite, MemRead, Branch, InvBranchCond, Jump, Link,
         input [5:0] OP, 
         input [5:0] funct
@@ -106,6 +153,8 @@ module fsm
         RegWrite = 1'b0;
         ALUSrc = `ALU_SRC_RT;
         ALUOp = `ADD_;
+        ALUVOp = `ADD_;
+        ALUVDtype = `BYTE_;
         MemWrite = 1'b0;
         MemRead = 1'b0;
         MemToReg = `MEM_TO_REG_FROM_ALU;
@@ -114,6 +163,37 @@ module fsm
         Jump = 1'b0;
         Link = 1'b0;
         case (OP)
+            `VTYPE_OP: begin
+                case(funct)
+                    `LDV_W: begin
+                    end
+                    `STV_W: begin
+                    end
+                    `ADDV_B: begin
+                        ALUVOp = `ADD_;
+                        ALUVDtype = `BYTE_;
+                    end
+                    // The rest of ADDV
+                    `SUBV_B: begin
+                        ALUVOp = `SUB_;
+                        ALUVDtype = `BYTE_;
+                    end
+                    // The rest of SUBV
+                    `ADDIV_B: begin
+                        ALUVOp = `ADD_;
+                        ALUVDtype = `BYTE_;
+                    end
+                    // The rest of ADDIV
+                    `XORV: begin
+                        ALUVOp = `XOR_;
+                        ALUVDtype = `BYTE_;
+                    end
+                    `ANDV: begin
+                        ALUVOp = `AND_;
+                        ALUVDtype = `BYTE_;
+                    end
+                endcase
+            end
             `RTYPE_OP:	begin 
                 RegDest = `REG_DEST_RD;
                 RegWrite = 1'b1;

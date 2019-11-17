@@ -6,7 +6,7 @@
 `include "regfile.v"
 
 module hw4testbenchharness();
-  localparam WIDTH = 34;
+  localparam WIDTH = 128;
 
   wire[WIDTH-1:0]	ReadData1;	// Data from first register read
   wire[WIDTH-1:0]	ReadData2;	// Data from second register read
