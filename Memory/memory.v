@@ -20,17 +20,19 @@ module memory
     input  [31:0]  data_in,
     input  [31:0]  data_addr,
     input          clk,
-    input          wr_en 
+    input          wr_en,
+    input          load_mem
 );
 
     // 16KiB memory, organized as 4096 element array of 32-bit words
     reg [31:0] mem [4095:0];
 
-    initial begin
-        // $display("Loading Memory");
-        $readmemb("progmem.mem", mem);
+    always @(posedge load_mem) begin
+        if (load_mem) begin
+            $display("Loading Memory");
+            $readmemb("progmem.mem", mem);
+        end
     end
-
     // Alternative: 16KiB memory, organized as 16384 element array of bytes
     //   This is closer to the physical implementation but makes the Verilog
     //   messier since you need to access multiple bytes at once.

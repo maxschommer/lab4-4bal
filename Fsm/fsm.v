@@ -141,6 +141,7 @@ module fsm
         output reg [1:0] RegDest, MemToReg,
         output reg [2:0] ALUOp, ALUVOp, ALUVDtype,
         output reg MemWrite, MemRead, Branch, InvBranchCond, Jump, Link,
+        output reg VMemWrite, VMemRead,
         input [5:0] OP, 
         input [5:0] funct
     );
@@ -155,6 +156,8 @@ module fsm
         ALUOp = `ADD_;
         ALUVOp = `ADD_;
         ALUVDtype = `BYTE_;
+        VMemWrite = 1'b0;
+        VMemRead = 1'b0;
         MemWrite = 1'b0;
         MemRead = 1'b0;
         MemToReg = `MEM_TO_REG_FROM_ALU;
@@ -166,6 +169,8 @@ module fsm
             `VTYPE_OP: begin
                 case(funct)
                     `LDV_W: begin
+                        VMemWrite = 1'b1;
+                        RegDest = `REG_DEST_RD;
                     end
                     `STV_W: begin
                     end

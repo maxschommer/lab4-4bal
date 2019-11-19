@@ -29,6 +29,12 @@ module decoder
             jaddr <= code[26:0];
         end
 
+        else if (op == 6'b111) begin
+            funct <= code[5:0];
+            rt <= code[20:16];
+            rs <= code[25:21];
+        end
+
         // I-type (beq/addi/ori/lw/sw)
         else begin
             rt <= code[20:16];

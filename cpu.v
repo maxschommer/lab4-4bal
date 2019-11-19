@@ -1,5 +1,6 @@
 `include "Fsm/fsm.v"
 `include "ALU/alu.v"
+`include "ALUV/aluv.v"
 `include "Decoder/decoder.v"
 `include "Memory/memory.v"
 `include "ProgramCounter/programcounter.v"
@@ -17,7 +18,8 @@ module cpu (
     input [31:0] inst_addr,
     input prog_en,
     input clk,
-    input debug
+    input debug,
+    input load_mem
 );
 
     // FSM Definitions
@@ -26,6 +28,11 @@ module cpu (
     wire [1:0] RegDest, MemToReg;
     wire [2:0] ALUOp;
     wire ALUSrc; // Mux select
+
+    wire [2:0] ALUVOp;
+    wire [2:0] ALUVDtype;
+    reg [127:0] WriteDataVec;
+    wire VMemWrite;
 
     reg [31:0] mem_data_addr;
     reg [31:0] mem_data_in;
@@ -63,10 +70,18 @@ module cpu (
     // Register Definitions 
     wire [31:0] D_a;                    // Connected
     wire [31:0] D_b;                    // Connected
+    wire [31:0] ReadData2b;
+    wire [31:0] ReadData2c;
+    wire [31:0] ReadData2d;
     reg  [31:0] D_w;                    // Connected
     wire  [4:0] A_a;                    // Connected
     wire  [4:0] A_b;                    // Connected
     reg  [4:0] A_w;                     // Connected
+
+
+    // Vector Register Definitions
+    wire [127:0] ReadData1Vec;
+    wire [127:0] ReadData2Vec;
 
 
     // General Purpose REG
@@ -74,6 +89,9 @@ module cpu (
     (
         .ReadData1(D_a),            // Connected
         .ReadData2(D_b),            // Connected
+        .ReadData2b   (ReadData2b),
+        .ReadData2c   (ReadData2c),
+        .ReadData2d   (ReadData2d),
         .WriteData(D_w),            // Connected
         .ReadRegister1(rs),            // Connected
         .ReadRegister2(rt),            // Connected
@@ -90,8 +108,8 @@ module cpu (
         .WriteData    (WriteDataVec),
         .ReadRegister1(ReadRegister1Vec),
         .ReadRegister2(ReadRegister2Vec),
-        .WriteRegister(WriteRegisterVec),
-        .RegWrite     (RegWriteVec),
+        .WriteRegister(rs),
+        .RegWrite     (VMemWrite),
         .Clk          (clk)
     );
 
@@ -137,7 +155,16 @@ module cpu (
                 .data_in    (mem_data_in),              // Connected
                 .data_addr  (mem_data_addr),            // Connected
                 .clk        (clk),                      // Connected
-                .wr_en      (MemWrite));
+                .wr_en      (MemWrite),
+                .load_mem   (load_mem));
+
+    // ALUV
+    aluv ALUV(.result(result),
+                .iszero  (vIszero),
+                .operandA(vOperandA),
+                .operandB(vOperandB),
+                .command (ALUVOp),
+                .dtype   (ALUVDtype));
 
     // ALU
     alu ALU(.result(alu_result),                        // Connected
@@ -154,7 +181,6 @@ module cpu (
     wire [31:0] se_out;
     signextend SE(.se (se_out), .imm(imm));
 
-
     // FSM
     fsm FSM(.RegDest(RegDest),
             .RegWrite     (RegWrite),
@@ -162,6 +188,8 @@ module cpu (
             .ALUOp        (ALUOp),
             .ALUVOp       (ALUVOp),
             .ALUVDtype    (ALUVDtype),
+            .VMemWrite    (VMemWrite),
+            .VMemRead     (VMemRead),
             .MemWrite     (MemWriteFSM),
             .MemRead      (MemRead),
             .MemToReg     (MemToReg),
@@ -266,6 +294,24 @@ module cpu (
                         mem_data_addr <= inst_addr;
                         mem_data_in <= prog_instruction;
                     end
+        endcase
+    end
+
+    // Vector operation mux
+    always @* begin
+        case (funct)
+            `LDV_W: begin
+                $display("Writing Vector.");
+                $display("Write Vector: %b", VMemWrite);
+                WriteDataVec <= {D_b, ReadData2b, ReadData2c, ReadData2d};
+                $display("Data Vec: %b", WriteDataVec);
+                $display("Write Addr: ", A_w);
+                $display("D_b", D_b);
+                $display("ReadData2b", ReadData2b);
+                $display("ReadData2c", ReadData2c);
+                $display("ReadData2d", ReadData2d);
+
+            end
         endcase
     end
 

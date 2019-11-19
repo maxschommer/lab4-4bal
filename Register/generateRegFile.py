@@ -28,6 +28,9 @@ module regfile
 (
 output[WIDTH-1:0]   ReadData1,  // Contents of first register read
 output[WIDTH-1:0]   ReadData2,  // Contents of second register read
+output[WIDTH-1:0]   ReadData2b, // Register immediately after 
+output[WIDTH-1:0]   ReadData2c, 
+output[WIDTH-1:0]   ReadData2d,
 input[WIDTH-1:0]    WriteData,  // Contents to write to register
 input[4:0]  ReadRegister1,  // Address of first register to read
 input[4:0]  ReadRegister2,  // Address of second register to read
@@ -55,6 +58,10 @@ input       Clk,        // Clock (Positive Edge Triggered)
 
     muxNto1by32 #(.WIDTH(WIDTH)) endMux1(.out(ReadData1), .address(ReadRegister1), {0});
     muxNto1by32 #(.WIDTH(WIDTH)) endMux2(.out(ReadData2), .address(ReadRegister2), {0});
+
+    muxNto1by32 #(.WIDTH(WIDTH)) endMuxb(.out(ReadData2b), .address(ReadRegister2 + 5'd1), {0});
+    muxNto1by32 #(.WIDTH(WIDTH)) endMuxc(.out(ReadData2c), .address(ReadRegister2 + 5'd2), {0});
+    muxNto1by32 #(.WIDTH(WIDTH)) endMuxd(.out(ReadData2d), .address(ReadRegister2 + 5'd3), {0});
 
     //always @(link_addr) begin
 

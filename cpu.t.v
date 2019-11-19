@@ -15,7 +15,8 @@ module cpu_test ();
 	reg [31:0] inst_addr;
 	reg prog_en;
 	reg debug;
-	
+	reg load_mem = 1'b0;
+
 	cpu DUT(.clk(clk),
 			.D_a_inspect(D_a_inspect),
 			.D_b_inspect(D_b_inspect),
@@ -23,14 +24,15 @@ module cpu_test ();
 			.prog_instruction(prog_instruction),
 			.inst_addr       (inst_addr),
 			.prog_en         (prog_en),
-			.debug           (debug));
+			.debug           (debug),
+			.load_mem        (load_mem));
 
 	// Generate (infinite) clock
 	initial clk=0;
 	always #10 clk = !clk;
 
 
-	reg [4:0] s, t;
+	reg [4:0] s, t, d; // Variables to use for instructions
 	reg [15:0] i;
 
     reg [7:0] itr;
@@ -43,8 +45,36 @@ module cpu_test ();
 		  $dumpvars();
 		`endif
 		debug = 1'b0;
-		// prog_en = 1'b1; inst_addr = 32'b0; prog_instruction = {`ADDI_OP, 5'b00000, 5'd1,  16'd10};
-		// @(posedge clk); #1 // Load an instruction
+
+		// Add 10, 20, 30, and 40 into registers 8, 9, 10, and 11.
+
+		// addi $t, $s, imm 
+		// $t = $s + imm
+		// 0010 00ss ssst tttt iiii iiii iiii iiii
+		t = 5'd8; s = 5'd0; i = 16'd10;
+		prog_en = 1'b1; inst_addr = 32'b0; prog_instruction = {`ADDI_OP, s, t,  i};
+		@(posedge clk); #1 // Load an instruction
+
+		t = 5'd9; s = 5'd0; i = 16'd20;
+		prog_en = 1'b1; inst_addr = 32'd4; prog_instruction = {`ADDI_OP, s, t,  i};
+		@(posedge clk); #1 // Load an instruction
+
+		t = 5'd10; s = 5'd0; i = 16'd30;
+		prog_en = 1'b1; inst_addr = 32'd8; prog_instruction = {`ADDI_OP, s, t,  i};
+		@(posedge clk); #1 // Load an instruction
+
+		t = 5'd11; s = 5'd0; i = 16'd40;
+		prog_en = 1'b1; inst_addr = 32'd12; prog_instruction = {`ADDI_OP, s, t,  i};
+		@(posedge clk); #1 // Load an instruction
+
+		// Now load the first vector with the elements in the registers.
+		// 000111 ddddd sssss 00000 0000000000
+		// $d = {$s, $s+1, $s+2, $s+3}
+		d = 5'd1; s = 5'd8;
+		prog_en = 1'b1; inst_addr = 32'd16; prog_instruction = {`VTYPE_OP, d, s, 5'd0, 5'd0, `LDV_W};
+		$display("prog_instruction, %b", prog_instruction);
+		@(posedge clk); #1 // Load an instruction
+
 
 		// prog_en = 1'b1; inst_addr = 32'd4; prog_instruction = {`ADDI_OP, 5'b00000, 5'd2,  16'd12};
 		// @(posedge clk); #1 // Load an instruction
@@ -86,63 +116,7 @@ module cpu_test ();
 		prog_en = 1'b0;
 
 		// Run three instructions
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
-		@(posedge clk); #1
+		repeat(30)
 		@(posedge clk); #1
 
 		// // Add the 0 register and immediate to the register 1
@@ -185,40 +159,71 @@ module cpu_test ();
 		// Instruction = {6'b001000, 5'b00100, 5'b00100,  16'd0};
 		// @(posedge clk); #1
         
-        $display("Reg $0: %d", DUT.REG.genblock[0].regOut);
-        $display("Reg $1: %d", DUT.REG.genblock[1].regOut);
-        $display("Reg $2: %d", DUT.REG.genblock[2].regOut);
-        $display("Reg $3: %d", DUT.REG.genblock[3].regOut);
-        $display("Reg $4: %d", DUT.REG.genblock[4].regOut);
-        $display("Reg $5: %d", DUT.REG.genblock[5].regOut);
-        $display("Reg $6: %d", DUT.REG.genblock[6].regOut);
-        $display("Reg $7: %d", DUT.REG.genblock[7].regOut);
-        $display("Reg $8: %d", DUT.REG.genblock[8].regOut);
-        $display("Reg $9: %d", DUT.REG.genblock[9].regOut);
-        $display("Reg $10: %d", DUT.REG.genblock[10].regOut);
-        $display("Reg $11: %d", DUT.REG.genblock[11].regOut);
-        $display("Reg $12: %d", DUT.REG.genblock[12].regOut);
-        $display("Reg $13: %d", DUT.REG.genblock[13].regOut);
-        $display("Reg $14: %d", DUT.REG.genblock[14].regOut);
-        $display("Reg $15: %d", DUT.REG.genblock[15].regOut);
-        $display("Reg $16: %d", DUT.REG.genblock[16].regOut);
-        $display("Reg $17: %d", DUT.REG.genblock[17].regOut);
-        $display("Reg $18: %d", DUT.REG.genblock[18].regOut);
-        $display("Reg $19: %d", DUT.REG.genblock[19].regOut);
-        $display("Reg $20: %d", DUT.REG.genblock[20].regOut);
-        $display("Reg $21: %d", DUT.REG.genblock[21].regOut);
-        $display("Reg $22: %d", DUT.REG.genblock[22].regOut);
-        $display("Reg $23: %d", DUT.REG.genblock[23].regOut);
-        $display("Reg $24: %d", DUT.REG.genblock[24].regOut);
-        $display("Reg $25: %d", DUT.REG.genblock[25].regOut);
-        $display("Reg $26: %d", DUT.REG.genblock[26].regOut);
-        $display("Reg $27: %d", DUT.REG.genblock[27].regOut);
-        $display("Reg $28: %d", DUT.REG.genblock[28].regOut);
-        $display("Reg $29: %d", DUT.REG.genblock[29].regOut);
-        $display("Reg $30: %d", DUT.REG.genblock[30].regOut);
-        $display("Reg $31: %d", DUT.REG.genblock[31].regOut);
+        $display("General Purpose Reg  $0: %d", DUT.REG.genblock[0].regOut);
+        $display("General Purpose Reg  $1: %d", DUT.REG.genblock[1].regOut);
+        $display("General Purpose Reg  $2: %d", DUT.REG.genblock[2].regOut);
+        $display("General Purpose Reg  $3: %d", DUT.REG.genblock[3].regOut);
+        $display("General Purpose Reg  $4: %d", DUT.REG.genblock[4].regOut);
+        $display("General Purpose Reg  $5: %d", DUT.REG.genblock[5].regOut);
+        $display("General Purpose Reg  $6: %d", DUT.REG.genblock[6].regOut);
+        $display("General Purpose Reg  $7: %d", DUT.REG.genblock[7].regOut);
+        $display("General Purpose Reg  $8: %d", DUT.REG.genblock[8].regOut);
+        $display("General Purpose Reg  $9: %d", DUT.REG.genblock[9].regOut);
+        $display("General Purpose Reg $10: %d", DUT.REG.genblock[10].regOut);
+        $display("General Purpose Reg $11: %d", DUT.REG.genblock[11].regOut);
+        $display("General Purpose Reg $12: %d", DUT.REG.genblock[12].regOut);
+        $display("General Purpose Reg $13: %d", DUT.REG.genblock[13].regOut);
+        $display("General Purpose Reg $14: %d", DUT.REG.genblock[14].regOut);
+        $display("General Purpose Reg $15: %d", DUT.REG.genblock[15].regOut);
+        $display("General Purpose Reg $16: %d", DUT.REG.genblock[16].regOut);
+        $display("General Purpose Reg $17: %d", DUT.REG.genblock[17].regOut);
+        $display("General Purpose Reg $18: %d", DUT.REG.genblock[18].regOut);
+        $display("General Purpose Reg $19: %d", DUT.REG.genblock[19].regOut);
+        $display("General Purpose Reg $20: %d", DUT.REG.genblock[20].regOut);
+        $display("General Purpose Reg $21: %d", DUT.REG.genblock[21].regOut);
+        $display("General Purpose Reg $22: %d", DUT.REG.genblock[22].regOut);
+        $display("General Purpose Reg $23: %d", DUT.REG.genblock[23].regOut);
+        $display("General Purpose Reg $24: %d", DUT.REG.genblock[24].regOut);
+        $display("General Purpose Reg $25: %d", DUT.REG.genblock[25].regOut);
+        $display("General Purpose Reg $26: %d", DUT.REG.genblock[26].regOut);
+        $display("General Purpose Reg $27: %d", DUT.REG.genblock[27].regOut);
+        $display("General Purpose Reg $28: %d", DUT.REG.genblock[28].regOut);
+        $display("General Purpose Reg $29: %d", DUT.REG.genblock[29].regOut);
+        $display("General Purpose Reg $30: %d", DUT.REG.genblock[30].regOut);
+        $display("General Purpose Reg $31: %d", DUT.REG.genblock[31].regOut);
 
-
+        $display("Vector Reg  $0: %d", DUT.VREG.genblock[0].regOut);
+        $display("Vector Reg  $1: %d", DUT.VREG.genblock[1].regOut);
+        $display("Vector Reg  $2: %d", DUT.VREG.genblock[2].regOut);
+        $display("Vector Reg  $3: %d", DUT.VREG.genblock[3].regOut);
+        $display("Vector Reg  $4: %d", DUT.VREG.genblock[4].regOut);
+        $display("Vector Reg  $5: %d", DUT.VREG.genblock[5].regOut);
+        $display("Vector Reg  $6: %d", DUT.VREG.genblock[6].regOut);
+        $display("Vector Reg  $7: %d", DUT.VREG.genblock[7].regOut);
+        $display("Vector Reg  $8: %d", DUT.VREG.genblock[8].regOut);
+        $display("Vector Reg  $9: %d", DUT.VREG.genblock[9].regOut);
+        $display("Vector Reg $10: %d", DUT.VREG.genblock[10].regOut);
+        $display("Vector Reg $11: %d", DUT.VREG.genblock[11].regOut);
+        $display("Vector Reg $12: %d", DUT.VREG.genblock[12].regOut);
+        $display("Vector Reg $13: %d", DUT.VREG.genblock[13].regOut);
+        $display("Vector Reg $14: %d", DUT.VREG.genblock[14].regOut);
+        $display("Vector Reg $15: %d", DUT.VREG.genblock[15].regOut);
+        $display("Vector Reg $16: %d", DUT.VREG.genblock[16].regOut);
+        $display("Vector Reg $17: %d", DUT.VREG.genblock[17].regOut);
+        $display("Vector Reg $18: %d", DUT.VREG.genblock[18].regOut);
+        $display("Vector Reg $19: %d", DUT.VREG.genblock[19].regOut);
+        $display("Vector Reg $20: %d", DUT.VREG.genblock[20].regOut);
+        $display("Vector Reg $21: %d", DUT.VREG.genblock[21].regOut);
+        $display("Vector Reg $22: %d", DUT.VREG.genblock[22].regOut);
+        $display("Vector Reg $23: %d", DUT.VREG.genblock[23].regOut);
+        $display("Vector Reg $24: %d", DUT.VREG.genblock[24].regOut);
+        $display("Vector Reg $25: %d", DUT.VREG.genblock[25].regOut);
+        $display("Vector Reg $26: %d", DUT.VREG.genblock[26].regOut);
+        $display("Vector Reg $27: %d", DUT.VREG.genblock[27].regOut);
+        $display("Vector Reg $28: %d", DUT.VREG.genblock[28].regOut);
+        $display("Vector Reg $29: %d", DUT.VREG.genblock[29].regOut);
+        $display("Vector Reg $30: %d", DUT.VREG.genblock[30].regOut);
+        $display("Vector Reg $31: %d", DUT.VREG.genblock[31].regOut);
 
         //for (itr = 7'b0; itr < 7'd32; itr=itr+1'b1) begin
         //    //$display("Register $%d: %d", itr, DUT.REG.genblock[itr].regOut);
