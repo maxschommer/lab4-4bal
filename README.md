@@ -24,7 +24,7 @@ NOTE: For operations that work on multiple data formats, their vector op-code is
 LDV.W: Load Vector from four adjacent GPRs as words.
 
  - Format: `$d = {$s, $s+1, $s+2, $s+3}`     
- - `0111 00000010 ddddd sssss 0000000000`    
+ - `011100 ddddd sssss 00000 0000000010`    
  - `$d` is the destination Vector register     
  - `$s` is the start source register, where `$s`, `$s+1`, `$s+2`, `$s+3` are all
    loaded.
@@ -32,7 +32,7 @@ LDV.W: Load Vector from four adjacent GPRs as words.
 STV.W: Store Vector into a group of four GPRs.  
 
  - Format: `$d, $d+1, $d+2, $d+3 = $s`
- - `0111 00000111 ddddd sssss 0000000000`
+ - `011100 ddddd sssss 00000 0000000111`
  - `$d` is the destination start GPR, where `$d`, `$d+1`, `$d+2`, `$d+3` are all stored.
  - `$s` is the source Vector register
   
