@@ -9,12 +9,13 @@ module decoder
         output reg [5:0] funct,     //    1   |   0    |   0
         output reg [15:0] imm,      //    0   |   1    |   0
         output reg [25:0] jaddr,    //    0   |   0    |   1
+        output reg [9:0]  imm10,
         input [31:0] code
     );
 
     assign op = code[31:26];
 
-    always @(code) begin
+    always @* begin
         // R-type (add/sub/and/or/slt)
         if (op == 6'b0) begin
             shamt <= code[10:6];
@@ -29,10 +30,13 @@ module decoder
             jaddr <= code[26:0];
         end
 
+        // oooooo sssss ttttt iiiiiiiiii ffffff
         else if (op == 6'b111) begin
             funct <= code[5:0];
             rt <= code[20:16];
             rs <= code[25:21];
+            rd <= code[15:11];
+            imm10 <= code[15:6]; // 10 bit immediate :(
         end
 
         // I-type (beq/addi/ori/lw/sw)

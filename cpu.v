@@ -6,6 +6,8 @@
 `include "ProgramCounter/programcounter.v"
 `include "Register/regfile.v"
 `include "SignExtend/signextend.v"
+`include "SignExtend/signextendv.v"
+`include "FillV/fillv.v"
 
 module cpu (
     output wire [31:0] D_a_inspect, D_b_inspect,
@@ -19,6 +21,7 @@ module cpu (
     input prog_en,
     input clk,
     input debug,
+    input debug_v,
     input load_mem
 );
 
@@ -48,6 +51,11 @@ module cpu (
     wire [31:0] operandA;
     reg [31:0] operandB;
 
+    // ALUV Definitions
+    wire [127:0] ALUVResult;
+    wire [127:0] vOperandA;
+    reg  [127:0] vOperandB;
+
     // Memory Definitions
     reg [31:0] PC;
     wire [31:0] instruction;
@@ -63,6 +71,7 @@ module cpu (
     wire [4:0] shamt;
     wire [5:0] funct;
     wire [15:0] imm;
+    wire [9:0] imm10;
     wire [25:0] jaddr;
     wire [31:0] code;
 
@@ -83,9 +92,11 @@ module cpu (
 
 
     // Vector Register Definitions
-    wire [127:0] ReadData1Vec;
-    wire [127:0] ReadData2Vec;
+    wire [127:0] vD_a;
+    wire [127:0] vD_b;
 
+    // FillV Defintiions
+    wire [127:0] fill_res;
 
     // General Purpose REG
     regfile #(.WIDTH(32)) REG
@@ -112,11 +123,11 @@ module cpu (
     // Vector Register 
     regfile #(.WIDTH(128)) VREG
     (
-        .ReadData1    (ReadData1Vec),
-        .ReadData2    (ReadData2Vec),
+        .ReadData1    (vD_a),
+        .ReadData2    (vD_b),
         .WriteData    (WriteDataVec),
-        .ReadRegister1(ReadRegister1Vec),
-        .ReadRegister2(ReadRegister2Vec),
+        .ReadRegister1(rt),
+        .ReadRegister2(rd),
         .WriteRegister(rs),
         .RegWrite     (VMemWrite),
         .Clk          (clk)
@@ -168,9 +179,9 @@ module cpu (
                 .load_mem   (load_mem));
 
     // ALUV
-    aluv ALUV(.result(result),
+    aluv ALUV(.result(ALUVResult),
                 .iszero  (vIszero),
-                .operandA(vOperandA),
+                .operandA(vD_a),
                 .operandB(vOperandB),
                 .command (ALUVOp),
                 .dtype   (ALUVDtype));
@@ -184,11 +195,28 @@ module cpu (
             .command(ALUOp));                           // Connected
 
     // Instruction Fetch Unit
-    decoder dec(OP, rs, rt, rd, shamt, funct, imm, jaddr, instruction); // Assign code to instruction for debugging
+    decoder dec(.op     (OP),
+                .rs     (rs),
+                .rt     (rt),
+                .rd     (rd),
+                .shamt  (shamt),
+                .funct  (funct),
+                .imm    (imm),
+                .jaddr  (jaddr),
+                .imm10  (imm10),
+                .code   (instruction));
 
     // Sign Extend
     wire [31:0] se_out;
     signextend SE(.se (se_out), .imm(imm));
+
+
+    wire [127:0] sev_out;
+    signextendv SEV(.se (sev_out), .imm(imm10));
+
+    fillv FILLV(.result(fill_res),
+                .imm128(sev_out),
+                .dtype(ALUVDtype));
 
     // FSM
     fsm FSM(.RegDest(RegDest),
@@ -197,6 +225,8 @@ module cpu (
             .ALUOp        (ALUOp),
             .ALUVOp       (ALUVOp),
             .ALUVDtype    (ALUVDtype),
+            .ALUVSrc      (ALUVSrc),
+            .DWV_Src      (DWV_Src),
             .VMemWrite    (VMemWrite),
             .VMemRead     (VMemRead),
             .MemWrite     (MemWriteFSM),
@@ -240,7 +270,15 @@ module cpu (
             $display("Current Instruction: %b", instruction);
             $display("Branching: ", Branch);
         end
+        else if (debug_v) begin
+            $display("ALUVResult: %b", ALUVResult);
+            $display("vD_a: %b", vD_a);
+            $display("vOperandB: %b", vOperandB);
+            $display("IMM10: %b", imm10);
+        end
     end
+
+
 
     // Wire Assignment definitions
     // assign code = Instruction;
@@ -312,24 +350,31 @@ module cpu (
         endcase
     end
 
-    // Vector operation mux
+    // Vector Write source mux
     always @* begin
-        case (funct)
-            `LDV_W: begin
-                $display("Writing Vector.");
-                $display("Write Vector: %b", VMemWrite);
+        case (DWV_Src)
+            `REG_32: begin
                 WriteDataVec <= {D_b, ReadData2b, ReadData2c, ReadData2d};
-                $display("Data Vec: %b", WriteDataVec);
-                $display("Write Addr: ", A_w);
-                $display("D_b", D_b);
-                $display("ReadData2b", ReadData2b);
-                $display("ReadData2c", ReadData2c);
-                $display("ReadData2d", ReadData2d);
             end
-            `STV_W: begin
-
+            `ALUV: begin
+                WriteDataVec <= ALUVResult;
             end
         endcase
     end
+
+    always @* begin
+        case (ALUVSrc)
+            `ALUV_SRC_IMM: begin
+                vOperandB <= fill_res;
+            end
+
+            `ALUV_SRC_RT: begin
+                vOperandB <= vD_b;
+            end
+        endcase
+    end
+    // always @* begin
+    //     case
+    // end
 
 endmodule

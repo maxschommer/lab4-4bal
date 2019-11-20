@@ -91,6 +91,9 @@
 `define ALUV_SRC_RT 1'b0
 `define ALUV_SRC_IMM 1'b1
 
+`define REG_32 1'b0
+`define ALUV   1'b1
+
 `define MEM_TO_REG_FROM_ALU 2'b0
 `define MEM_TO_REG_FROM_MEM 2'b1
 `define MEM_TO_REG_FROM_PC 2'b10
@@ -145,7 +148,7 @@ module fsm
         output reg [1:0] RegDest, MemToReg,
         output reg [2:0] ALUOp, ALUVOp, ALUVDtype,
         output reg MemWrite, MemRead, Branch, InvBranchCond, Jump, Link,
-        output reg VMemWrite, VMemRead,
+        output reg VMemWrite, VMemRead, DWV_Src,
         input [5:0] OP, 
         input [5:0] funct
     );
@@ -161,6 +164,7 @@ module fsm
         ALUOp = `ADD_;
         ALUVOp = `ADD_;
         ALUVDtype = `BYTE_;
+        DWV_Src = `REG_32;
         VMemWrite = 1'b0;
         VMemRead = 1'b0;
         MemWrite = 1'b0;
@@ -175,23 +179,59 @@ module fsm
                 case(funct)
                     `LDV_W: begin
                         VMemWrite = 1'b1;
+                        DWV_Src = `REG_32;
                     end
                     `STV_W: begin
                         MemWrite = 1'b1;
                     end
                     `ADDV_B: begin
+                        ALUVSrc = `ALUV_SRC_RT;
                         ALUVOp = `ADD_;
                         ALUVDtype = `BYTE_;
+                        DWV_Src = `ALUV;
+                        VMemWrite = 1'b1;
                     end
                     // The rest of ADDV
                     `SUBV_B: begin
                         ALUVOp = `SUB_;
                         ALUVDtype = `BYTE_;
+                        DWV_Src = `ALUV;
                     end
                     // The rest of SUBV
                     `ADDIV_B: begin
+                        ALUVSrc = `ALUV_SRC_IMM;
                         ALUVOp = `ADD_;
                         ALUVDtype = `BYTE_;
+                        DWV_Src = `ALUV;
+                        VMemWrite = 1'b1;
+                    end
+                    `ADDIV_H: begin
+                        ALUVSrc = `ALUV_SRC_IMM;
+                        ALUVOp = `ADD_;
+                        ALUVDtype = `HALFWORD_;
+                        DWV_Src = `ALUV;
+                        VMemWrite = 1'b1;
+                    end
+                    `ADDIV_W: begin
+                        ALUVSrc = `ALUV_SRC_IMM;
+                        ALUVOp = `ADD_;
+                        ALUVDtype = `WORD_;
+                        DWV_Src = `ALUV;
+                        VMemWrite = 1'b1;
+                    end
+                    `ADDIV_D: begin
+                        ALUVSrc = `ALUV_SRC_IMM;
+                        ALUVOp = `ADD_;
+                        ALUVDtype = `DOUBLEWORD_;
+                        DWV_Src = `ALUV;
+                        VMemWrite = 1'b1;
+                    end
+                    `ADDIV_V: begin
+                        ALUVSrc = `ALUV_SRC_IMM;
+                        ALUVOp = `ADD_;
+                        ALUVDtype = `VECTOR_;
+                        DWV_Src = `ALUV;
+                        VMemWrite = 1'b1;
                     end
                     // The rest of ADDIV
                     `XORV: begin
