@@ -77,6 +77,9 @@ module cpu (
     wire  [4:0] A_a;                    // Connected
     wire  [4:0] A_b;                    // Connected
     reg  [4:0] A_w;                     // Connected
+    reg  [4:0] A_wb;
+    reg  [4:0] A_wc;
+    reg  [4:0] A_wd;
 
 
     // Vector Register Definitions
@@ -93,9 +96,15 @@ module cpu (
         .ReadData2c   (ReadData2c),
         .ReadData2d   (ReadData2d),
         .WriteData(D_w),            // Connected
+        .WriteDataB    (WriteDataB),
+        .WriteDataC    (WriteDataC),
+        .WriteDataD    (WriteDataD),
         .ReadRegister1(rs),            // Connected
         .ReadRegister2(rt),            // Connected
         .WriteRegister(A_w),         // Connected
+        .WriteRegisterB(A_wb),
+        .WriteRegisterC(A_wc),
+        .WriteRegisterD(A_wd),
         .RegWrite(RegWrite),          // Connected From FSM
         .Clk(clk)                    // Connected
     );
@@ -263,6 +272,12 @@ module cpu (
             `REG_DEST_LINK: begin
                     A_w <= 5'd31;
                 end
+            `REG_DEST_VEC: begin
+                    A_w <= rs; // A bit out of convention, but how our vector ops work.
+                    A_wb <= rs + 5'd1; 
+                    A_wc <= rs + 5'd2;
+                    A_wd <= rs + 5'd3;
+                end
         endcase
     end
 
@@ -310,6 +325,8 @@ module cpu (
                 $display("ReadData2b", ReadData2b);
                 $display("ReadData2c", ReadData2c);
                 $display("ReadData2d", ReadData2d);
+            end
+            `STV_W: begin
 
             end
         endcase

@@ -76,6 +76,15 @@ module cpu_test ();
 		@(posedge clk); #1 // Load an instruction
 
 
+		// Store the first vector in the general purpose registers.
+		// 000111 ddddd sssss 00000 0000000000
+		// $d, $d+1, $d+2, $d+3 = $s
+		d = 5'd16; s = 5'd1;
+		prog_en = 1'b1; inst_addr = 32'd20; prog_instruction = {`VTYPE_OP, d, s, 5'd0, 5'd0, `STV_W};
+		$display("prog_instruction, %b", prog_instruction);
+		@(posedge clk); #1 // Load an instruction
+
+
 		// prog_en = 1'b1; inst_addr = 32'd4; prog_instruction = {`ADDI_OP, 5'b00000, 5'd2,  16'd12};
 		// @(posedge clk); #1 // Load an instruction
 

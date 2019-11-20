@@ -21,10 +21,17 @@ output[WIDTH-1:0]   ReadData2b, // Register immediately after
 output[WIDTH-1:0]   ReadData2c, 
 output[WIDTH-1:0]   ReadData2d,
 input[WIDTH-1:0]    WriteData,  // Contents to write to register
+input[WIDTH-1:0]    WriteDataB,
+input[WIDTH-1:0]    WriteDataC,
+input[WIDTH-1:0]    WriteDataD,
 input[4:0]  ReadRegister1,  // Address of first register to read
 input[4:0]  ReadRegister2,  // Address of second register to read
 input[4:0]  WriteRegister,  // Address of register to write
+input[4:0]  WriteRegisterB,
+input[4:0]  WriteRegisterC,
+input[4:0]  WriteRegisterD,
 input       RegWrite,   // Enable writing of register when High
+input       VecRegWrite,
 input       Clk,        // Clock (Positive Edge Triggered)
     input[31:0] link_addr
 );
@@ -32,6 +39,7 @@ input       Clk,        // Clock (Positive Edge Triggered)
     
     wire [31:0] decoded;
     decoder1to32 dec(.out(decoded), .enable (RegWrite), .address(WriteRegister));
+    // decoder1to32 decvb(.out(decoded), .enable (RegWrite), .address(WriteRegister));
 
     genvar i;
     generate

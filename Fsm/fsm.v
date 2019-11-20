@@ -83,9 +83,13 @@
 `define REG_DEST_RT 2'b0
 `define REG_DEST_RD 2'b1
 `define REG_DEST_LINK 2'b10
+`define REG_DEST_VEC  2'b11
 
 `define ALU_SRC_RT 1'b0
 `define ALU_SRC_IMM 1'b1
+
+`define ALUV_SRC_RT 1'b0
+`define ALUV_SRC_IMM 1'b1
 
 `define MEM_TO_REG_FROM_ALU 2'b0
 `define MEM_TO_REG_FROM_MEM 2'b1
@@ -137,7 +141,7 @@
 // X should be set in each case statement. 
 module fsm
     (
-        output reg  RegWrite, ALUSrc, 
+        output reg  RegWrite, ALUSrc, ALUVSrc,
         output reg [1:0] RegDest, MemToReg,
         output reg [2:0] ALUOp, ALUVOp, ALUVDtype,
         output reg MemWrite, MemRead, Branch, InvBranchCond, Jump, Link,
@@ -153,6 +157,7 @@ module fsm
         RegDest = `REG_DEST_RT;
         RegWrite = 1'b0;
         ALUSrc = `ALU_SRC_RT;
+        ALUVSrc = `ALUV_SRC_RT;
         ALUOp = `ADD_;
         ALUVOp = `ADD_;
         ALUVDtype = `BYTE_;
@@ -170,9 +175,9 @@ module fsm
                 case(funct)
                     `LDV_W: begin
                         VMemWrite = 1'b1;
-                        RegDest = `REG_DEST_RD;
                     end
                     `STV_W: begin
+                        MemWrite = 1'b1;
                     end
                     `ADDV_B: begin
                         ALUVOp = `ADD_;
