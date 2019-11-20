@@ -1,7 +1,10 @@
+Lab 4
+===============
+*Maximilian Schommer & Solomon Greenberg*
 
-# CompArch Lab 4: Vector Operations on a Single Cycle CPU
 
-The goal of this lab is to support some Single Instruction Multiple Data operations in hardware. We will be very loosely following the [MIPS SIMD whitepaper](https://s3-eu-west-1.amazonaws.com/downloads-mips/documents/MD00926-2B-MSA-WHT-01.03.pdf). 
+The goal of this lab is to extend our CPU from Lab 3 with a set of SIMD (Single Instruction Multiple Data) instructions. We will be very loosely following the [MIPS SIMD whitepaper](https://s3-eu-west-1.amazonaws.com/downloads-mips/documents/MD00926-2B-MSA-WHT-01.03.pdf). 
+
 
 ## SIMD Architecture ##
 
@@ -39,7 +42,7 @@ STV.W: Store Vector into a group of four GPRs.
 ADDV.df: Add two Vectors togeather, according to data type.
 
  - Format: `$d = $a + $b`
- - `0111 00001010[+ Op-Code Value]  ddddd aaaaa bbbbb 00000`
+ - `000111 ddddd aaaaa bbbbb 00000 001010[+ Op-Code Value]`
  - `$d` is the destination Vector register
  - `$a` is the first source Vector register
  - `$b` is the second source Vector register
@@ -47,7 +50,7 @@ ADDV.df: Add two Vectors togeather, according to data type.
 SUBV.df: Subtract two vectors, word-wise.
 
  - Format: `$d = $a - $b`
- - `0111 00001111[+ Op-Code Value] ddddd aaaaa bbbbb 00000`
+ - `000111 ddddd aaaaa bbbbb 00000 001111[+ Op-Code Value]`
  - `$d` is the destination Vector register
  - `$a` is the first source Vector register
  - `$b` is the second source Vector register
@@ -55,7 +58,7 @@ SUBV.df: Subtract two vectors, word-wise.
 ADDIV.df: Add an immediate to a vector.
 
  - Format: `$d = $s + imm`
- - `0111 00010100[+ Op-Code Value] ddddd sssss iiiiiiii`
+ - `000111 ddddd sssss iiiiiiiiii 010100[+ Op-Code Value]`
  - `$d` is the destination Vector register
  - `$s` is the source Vector register
  - `i` is the immediate value
@@ -63,7 +66,7 @@ ADDIV.df: Add an immediate to a vector.
 XORV: Bitwise XOR on two vectors.
 
  - Format: `$d = $a | $b`
- - `0111 00011001 ddddd aaaaa bbbbb 00000`
+ - `000111 ddddd aaaaa bbbbb 00000 011001`
  - `$d` is the destination Vector register
  - `$a` is the first source Vector register
  - `$b` is the second source Vector register
@@ -71,8 +74,25 @@ XORV: Bitwise XOR on two vectors.
 ANDV: Bitwise AND on two vectors.
 
  - Format: `$d = $a & $b`
- - `0111 0011010 ddddd aaaaa bbbbb 00000`
+ - `000111 ddddd aaaaa bbbbb 00000 011010`
  - `$d` is the destination Vector register
  - `$a` is the first source Vector register
  - `$b` is the second source Vector register
 
+## Design ##
+
+We started out with the CPU we had written for Lab 3. Then, we added another set of 128 bit registers, able to do 128-bit reads and writes. The wide registers were wired to a vectorized ALU, able to perform arithmatic on two vectors up to 128 bits each in total size. Each vector is able to consist of either sixteen bytes (8b), eight half words (16b), four words (32b), two double words (64b), or a 128-bit integer. Results are stored back in the 128b register file. Vectors in the vector register are able to be simultaniously bulk loaded into four addresses in the main register file of the CPU. 
+
+Additional FSM modifications were needed, with the new instructions being integrated as V-type instructions, with a format similar to R-type.
+
+## Testing Process ##
+We kept the testing process generally isolated to the new vectorized features, sans some regression testing to make sure we weren't breaking any of the existing CPU. To run all individual test cases, from the root directory run run_tests.sh. In order to test the cpu, run run_cpu.sh. Place a text binary file named progmem.mem for the cpu to read. When the cpu is run, it will print out the final register states. To verify that the program ran successfully, compare the registers to the registers when a program is run from a MIPS emulator. 
+
+## Block Diagram ##
+![diagram]( blockdiagram.png "Logo Title Text 1")
+
+## Performance ##
+
+The primary bottleneck to our vectorized unit's speed is removing data from the vector registers. We attempted to allow for both bulk writes to and reads from the vector registers, but weren't able to get the bulk read operational. As such, to load in a 128-bit vector, it will take at one clock cycle to move the data to the vector register, but to move data from the vector registers to the general purpose registers will take four clock cycles. 
+
+The area used is also extremely large - we added a second, much larger (128-bit) ALU and a second set of registers just for the vectorized unit. A better course of action would've been to use a single ALU for both ordinary and vector arithmatic, as well as a single register file, but we ran out of time.
