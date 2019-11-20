@@ -3,7 +3,7 @@ Lab 4
 *Maximilian Schommer & Solomon Greenberg*
 
 
-THe goal of this lab is to extend our CPU from Lab 3 with a set of SIMD (Single Instruction Multiple Data) instructions. We will be very loosely following the [MIPS SIMD whitepaper](https://s3-eu-west-1.amazonaws.com/downloads-mips/documents/MD00926-2B-MSA-WHT-01.03.pdf). 
+The goal of this lab is to extend our CPU from Lab 3 with a set of SIMD (Single Instruction Multiple Data) instructions. We will be very loosely following the [MIPS SIMD whitepaper](https://s3-eu-west-1.amazonaws.com/downloads-mips/documents/MD00926-2B-MSA-WHT-01.03.pdf). 
 
 
 ## SIMD Architecture ##
@@ -42,7 +42,7 @@ STV.W: Store Vector into a group of four GPRs.
 ADDV.df: Add two Vectors togeather, according to data type.
 
  - Format: `$d = $a + $b`
- - `0111 00001010[+ Op-Code Value]  ddddd aaaaa bbbbb 00000`
+ - `000111 ddddd aaaaa bbbbb 00000 001010[+ Op-Code Value]`
  - `$d` is the destination Vector register
  - `$a` is the first source Vector register
  - `$b` is the second source Vector register
@@ -50,7 +50,7 @@ ADDV.df: Add two Vectors togeather, according to data type.
 SUBV.df: Subtract two vectors, word-wise.
 
  - Format: `$d = $a - $b`
- - `000111 001111[+ Op-Code Value] ddddd aaaaa bbbbb 00000`
+ - `000111 ddddd aaaaa bbbbb 00000 001111[+ Op-Code Value]`
  - `$d` is the destination Vector register
  - `$a` is the first source Vector register
  - `$b` is the second source Vector register
@@ -66,7 +66,7 @@ ADDIV.df: Add an immediate to a vector.
 XORV: Bitwise XOR on two vectors.
 
  - Format: `$d = $a | $b`
- - `0111 00011001 ddddd aaaaa bbbbb 00000`
+ - `000111 ddddd aaaaa bbbbb 00000 011001`
  - `$d` is the destination Vector register
  - `$a` is the first source Vector register
  - `$b` is the second source Vector register
@@ -74,7 +74,7 @@ XORV: Bitwise XOR on two vectors.
 ANDV: Bitwise AND on two vectors.
 
  - Format: `$d = $a & $b`
- - `0111 0011010 ddddd aaaaa bbbbb 00000`
+ - `000111 ddddd aaaaa bbbbb 00000 011010`
  - `$d` is the destination Vector register
  - `$a` is the first source Vector register
  - `$b` is the second source Vector register
