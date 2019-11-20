@@ -89,7 +89,7 @@ Additional FSM modifications were needed, with the new instructions being integr
 We kept the testing process generally isolated to the new vectorized features, sans some regression testing to make sure we weren't breaking any of the existing CPU. To run all individual test cases, from the root directory run run_tests.sh. In order to test the cpu, run run_cpu.sh. Place a text binary file named progmem.mem for the cpu to read. When the cpu is run, it will print out the final register states. To verify that the program ran successfully, compare the registers to the registers when a program is run from a MIPS emulator. 
 
 ## Block Diagram ##
-![diagram]( blockdiagram.png "Logo Title Text 1")
+![diagram]( Media/CPU_Block_Diagram_Vector.png "CPU Block Diagram with Vectorization")
 
 ## Performance ##
 
