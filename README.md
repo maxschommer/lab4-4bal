@@ -50,7 +50,7 @@ ADDV.df: Add two Vectors togeather, according to data type.
 SUBV.df: Subtract two vectors, word-wise.
 
  - Format: `$d = $a - $b`
- - `0111 00001111[+ Op-Code Value] ddddd aaaaa bbbbb 00000`
+ - `000111 001111[+ Op-Code Value] ddddd aaaaa bbbbb 00000`
  - `$d` is the destination Vector register
  - `$a` is the first source Vector register
  - `$b` is the second source Vector register
@@ -58,7 +58,7 @@ SUBV.df: Subtract two vectors, word-wise.
 ADDIV.df: Add an immediate to a vector.
 
  - Format: `$d = $s + imm`
- - `0111 00010100[+ Op-Code Value] ddddd sssss iiiiiiii`
+ - `000111 ddddd sssss iiiiiiiiii 010100[+ Op-Code Value]`
  - `$d` is the destination Vector register
  - `$s` is the source Vector register
  - `i` is the immediate value
@@ -93,6 +93,6 @@ We kept the testing process generally isolated to the new vectorized features, s
 
 ## Performance ##
 
-The primary bottleneck to our vectorized unit's speed is loading data into the vector registers. We attempted to allow for both bulk writes to and reads from the vector registers, but weren't able to get the bulk write operational. As such, to load in two 128-bit vectors, it will take at least eight clock cycles to move the data over. 
+The primary bottleneck to our vectorized unit's speed is removing data from the vector registers. We attempted to allow for both bulk writes to and reads from the vector registers, but weren't able to get the bulk read operational. As such, to load in a 128-bit vector, it will take at one clock cycle to move the data to the vector register, but to move data from the vector registers to the general purpose registers will take four clock cycles. 
 
 The area used is also extremely large - we added a second, much larger (128-bit) ALU and a second set of registers just for the vectorized unit. A better course of action would've been to use a single ALU for both ordinary and vector arithmatic, as well as a single register file, but we ran out of time.
